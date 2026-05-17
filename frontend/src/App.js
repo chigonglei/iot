@@ -145,23 +145,39 @@ function App() {
 
   const toggleLightAuto = () => {
 
+  if (data.lightAuto) {
+
     client.publish(
-
       "home/light",
+      "MANUAL"
+    );
 
+  } else {
+
+    client.publish(
+      "home/light",
       "AUTO"
     );
-  };
+  }
+};
 
   const toggleFanAuto = () => {
 
+  if (data.fanAuto) {
+
     client.publish(
-
       "home/fan",
+      "MANUAL"
+    );
 
+  } else {
+
+    client.publish(
+      "home/fan",
       "AUTO"
     );
-  };
+  }
+};
 
   return (
 
