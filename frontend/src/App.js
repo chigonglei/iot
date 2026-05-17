@@ -40,7 +40,7 @@ const client = mqtt.connect(
 
     username: "sanjoykh27",
 
-    password: "YOUR_PASSWORD"
+    password: "Sanjoy@9862"
   }
 );
 
