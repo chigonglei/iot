@@ -48,24 +48,27 @@ function App() {
 
   const [data, setData] =
 
-    useState({
+  useState({
 
-      temperature: 0,
+    temperature: 0,
 
-      ldr: 0,
+    ldr: 0,
 
-      motion: 0,
+    motion: 0,
 
-      gas: 0,
+    gas: 0,
 
-      light: "OFF",
+    light: "OFF",
 
-      fan: "OFF",
+    fan: "OFF",
 
-      lightAuto: true,
+    lightAuto: true,
 
-      fanAuto: true
-    });
+    fanAuto: true
+  });
+
+const [online, setOnline] =
+  useState(false);
 
   // =====================================================
   //                  MQTT CONNECT
@@ -73,39 +76,64 @@ function App() {
 
   useEffect(() => {
 
-    client.on("connect", () => {
+  client.on("connect", () => {
 
-      console.log(
-        "MQTT Connected"
-      );
-
-      client.subscribe(
-        "home/sensors"
-      );
-    });
-
-    client.on(
-
-      "message",
-
-      (topic, message) => {
-
-        if (
-          topic === "home/sensors"
-        ) {
-
-          const sensorData =
-
-            JSON.parse(
-              message.toString()
-            );
-
-          setData(sensorData);
-        }
-      }
+    console.log(
+      "MQTT Connected"
     );
 
-  }, []);
+    setOnline(true);
+
+    client.subscribe(
+      "home/sensors"
+    );
+  });
+
+  client.on("offline", () => {
+
+    console.log(
+      "MQTT Offline"
+    );
+
+    setOnline(false);
+  });
+
+  client.on("reconnect", () => {
+
+    console.log(
+      "MQTT Reconnecting"
+    );
+  });
+
+  client.on("error", () => {
+
+    setOnline(false);
+  });
+
+  client.on(
+
+    "message",
+
+    (topic, message) => {
+
+      if (
+        topic === "home/sensors"
+      ) {
+
+        const sensorData =
+
+          JSON.parse(
+            message.toString()
+          );
+
+        setData(sensorData);
+
+        setOnline(true);
+      }
+    }
+  );
+
+}, []);
 
   // =====================================================
   //                  LIGHT CONTROL
@@ -183,6 +211,36 @@ function App() {
 
     <div className="app">
 
+      {
+  !online && (
+
+    <div className="offline-banner">
+
+      <div className="offline-card">
+
+        <div className="wifi-icon">
+
+          📡
+
+        </div>
+
+        <h2>
+          ESP32 Offline
+        </h2>
+
+        <p>
+
+          Waiting for device
+          connection...
+
+        </p>
+
+      </div>
+
+    </div>
+  )
+}
+
       <div className="top-bar">
 
         <div>
@@ -191,9 +249,29 @@ function App() {
             Smart Home Dashboard
           </h1>
 
-          <p>
-            MQTT Connected
-          </p>
+          <div className="connection-status">
+
+  <div
+    className={
+      online
+        ? "status-dot online"
+        : "status-dot offline"
+    }
+  ></div>
+
+  <p>
+
+    {
+      online
+
+      ? "ESP32 Connected"
+
+      : "ESP32 Not Connected"
+    }
+
+  </p>
+
+</div>
 
         </div>
 
@@ -267,18 +345,26 @@ function App() {
 
       <DeviceControl
 
-        title="Light"
+  title="Light"
 
-        subtitle="Living Room"
+  subtitle="Living Room"
 
-        state={data.light === "ON"}
+  state={data.light === "ON"}
 
-        auto={data.lightAuto}
+  auto={data.lightAuto}
 
-        onToggle={toggleLight}
+  onToggle={
+    online
+      ? toggleLight
+      : null
+  }
 
-        onAutoToggle={toggleLightAuto}
-      />
+  onAutoToggle={
+    online
+      ? toggleLightAuto
+      : null
+  }
+/>
 
       {/* FAN */}
 
