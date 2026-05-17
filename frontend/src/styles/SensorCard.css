@@ -1,0 +1,54 @@
+.sensor-card{
+
+  background:white;
+
+  padding:30px;
+
+  border-radius:25px;
+
+  text-align:center;
+
+  box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.sensor-icon{
+
+  width:80px;
+
+  height:80px;
+
+  border-radius:50%;
+
+  margin:auto;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  color:white;
+
+  font-size:35px;
+
+  margin-bottom:20px;
+}
+
+.sensor-card h2{
+
+  margin-bottom:15px;
+}
+
+.sensor-card h1{
+
+  font-size:42px;
+
+  margin-bottom:15px;
+}
+
+.sensor-card p{
+
+  color:green;
+
+  font-weight:bold;
+}
