@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>
 #include <DHT.h>
 
-// =====================================================
-//                    WIFI SETTINGS
-// =====================================================
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+
+
 
 // const char* ssid = "DEEPOOPC";
 // const char* password = "deepoo@123";
@@ -13,7 +13,29 @@
 const char* ssid = "SANJOY0974";
 const char* password = "9862622104";
 
-WebServer server(80);
+
+// =====================================================
+//                    MQTT SETTINGS
+// =====================================================
+
+const char* mqtt_server =
+"de9fcc2a2c21468eb9222078177ef4fa.s1.eu.hivemq.cloud";
+
+const int mqtt_port = 8883;
+
+const char* mqtt_user =
+"sanjoykh27";
+
+const char* mqtt_password =
+"Sanjoy@9862";
+
+// =====================================================
+//                    MQTT CLIENT
+// =====================================================
+
+WiFiClientSecure espClient;
+
+PubSubClient client(espClient);
 
 // =====================================================
 //                     PIN SETUP
@@ -65,6 +87,7 @@ unsigned long lastLightMotionTime = 0;
 bool darkState = false;
 
 bool lightState = false;
+
 bool fanState = false;
 
 bool gasDetected = false;
@@ -74,6 +97,7 @@ bool gasDetected = false;
 // =====================================================
 
 bool manualLight = false;
+
 bool manualFan = false;
 
 // =====================================================
@@ -95,188 +119,144 @@ int readLDR() {
 }
 
 // =====================================================
-//                  JSON SENSOR DATA
+//                    MQTT CALLBACK
 // =====================================================
 
-String getSensorData() {
+void callback(
+    char* topic,
+    byte* payload,
+    unsigned int length
+) {
 
-    float temperature =
-        dht.readTemperature();
+    String message;
 
-    int ldrValue =
-        readLDR();
+    for (int i = 0; i < length; i++) {
 
-    int gasValue =
-        analogRead(MQ2_PIN);
+        message += (char)payload[i];
+    }
 
-    int motion =
-        digitalRead(PIR_PIN);
+    String topicStr =
+        String(topic);
 
-    String json = "{";
+    Serial.print("Topic: ");
 
-    json += "\"temperature\":";
-    json += String(temperature);
-    json += ",";
+    Serial.println(topicStr);
 
-    json += "\"ldr\":";
-    json += String(ldrValue);
-    json += ",";
+    Serial.print("Message: ");
 
-    json += "\"motion\":";
-    json += String(motion);
-    json += ",";
+    Serial.println(message);
 
-    json += "\"gas\":";
-    json += String(gasValue);
-    json += ",";
+    // =================================================
+    //                    LIGHT
+    // =================================================
 
-    json += "\"light\":\"";
-    json += lightState ? "ON" : "OFF";
-    json += "\",";
+    if (topicStr == "home/light") {
 
-    json += "\"fan\":\"";
-    json += fanState ? "ON" : "OFF";
-    json += "\"";
+        if (message == "ON") {
 
-    json += ",\"lightAuto\":";
-    json += manualLight ? "false" : "true";
+            manualLight = true;
 
-    json += ",\"fanAuto\":";
-    json += manualFan ? "false" : "true";
+            lightState = true;
+        }
 
-    json += "}";
+        else if (message == "OFF") {
 
-    return json;
-}
+            manualLight = true;
 
-// =====================================================
-//                    API HANDLERS
-// =====================================================
+            lightState = false;
+        }
 
-void handleStatus() {
-
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
-
-    server.send(
-        200,
-        "application/json",
-        getSensorData()
-    );
-}
-
-// =====================================================
-//                    LIGHT APIs
-// =====================================================
-
-void handleLightOn() {
-
-    manualLight = true;
-
-    lightState = true;
-
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
-
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Light ON\"}"
-    );
-}
-
-void handleLightOff() {
-
-    manualLight = true;
-
-    lightState = false;
-
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
-
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Light OFF\"}"
-    );
-}
-
-void handleLightAuto() {
+        else if (message == "AUTO") {
 
     manualLight = false;
-
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
-
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Light AUTO\"}"
-    );
 }
 
-// =====================================================
-//                     FAN APIs
-// =====================================================
+else if (message == "MANUAL") {
 
-void handleFanOn() {
-
-    manualFan = true;
-
-    fanState = true;
-
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
-
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Fan ON\"}"
-    );
+    manualLight = true;
 }
 
-void handleFanOff() {
+    }
 
-    manualFan = true;
+    // =================================================
+    //                      FAN
+    // =================================================
 
-    fanState = false;
+    if (topicStr == "home/fan") {
 
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
+        if (message == "ON") {
 
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Fan OFF\"}"
-    );
-}
+            manualFan = true;
 
-void handleFanAuto() {
+            fanState = true;
+        }
+
+        else if (message == "OFF") {
+
+            manualFan = true;
+
+            fanState = false;
+        }
+
+        else if (message == "AUTO") {
 
     manualFan = false;
+}
 
-    server.sendHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-    );
+else if (message == "MANUAL") {
 
-    server.send(
-        200,
-        "application/json",
-        "{\"message\":\"Fan AUTO\"}"
-    );
+    manualFan = true;
+}
+    }
+}
+
+// =====================================================
+//                  MQTT RECONNECT
+// =====================================================
+
+void reconnect() {
+
+    while (!client.connected()) {
+
+        Serial.println(
+            "Connecting MQTT..."
+        );
+
+        if (
+
+            client.connect(
+                "ESP32Client",
+                mqtt_user,
+                mqtt_password
+            )
+
+        ) {
+
+            Serial.println(
+                "MQTT Connected"
+            );
+
+            client.subscribe(
+                "home/light"
+            );
+
+            client.subscribe(
+                "home/fan"
+            );
+
+        } else {
+
+            Serial.print(
+                "MQTT Failed: "
+            );
+
+            Serial.println(
+                client.state()
+            );
+
+            delay(2000);
+        }
+    }
 }
 
 // =====================================================
@@ -289,29 +269,60 @@ void setup() {
 
     dht.begin();
 
-    pinMode(LIGHT_RELAY_PIN, OUTPUT);
+    pinMode(
+        LIGHT_RELAY_PIN,
+        OUTPUT
+    );
 
-    pinMode(FAN_RELAY_PIN, OUTPUT);
+    pinMode(
+        FAN_RELAY_PIN,
+        OUTPUT
+    );
 
-    pinMode(PIR_PIN, INPUT);
+    pinMode(
+        PIR_PIN,
+        INPUT
+    );
 
-    pinMode(MQ2_PIN, INPUT);
+    pinMode(
+        MQ2_PIN,
+        INPUT
+    );
+
+    // =================================================
+    //                INITIAL STATES
+    // =================================================
 
     // Light relay active LOW
-    digitalWrite(LIGHT_RELAY_PIN, HIGH);
+
+    digitalWrite(
+        LIGHT_RELAY_PIN,
+        HIGH
+    );
 
     // Fan relay active HIGH
-    digitalWrite(FAN_RELAY_PIN, LOW);
+
+    digitalWrite(
+        FAN_RELAY_PIN,
+        LOW
+    );
 
     // =================================================
     //                  WIFI CONNECT
     // =================================================
 
-    WiFi.begin(ssid, password);
+    WiFi.begin(
+        ssid,
+        password
+    );
 
-    Serial.print("Connecting to WiFi");
+    Serial.print(
+        "Connecting WiFi"
+    );
 
-    while (WiFi.status() != WL_CONNECTED) {
+    while (
+        WiFi.status() != WL_CONNECTED
+    ) {
 
         delay(500);
 
@@ -320,35 +331,30 @@ void setup() {
 
     Serial.println();
 
-    Serial.println("WiFi Connected");
+    Serial.println(
+        "WiFi Connected"
+    );
 
-    Serial.print("IP Address: ");
+    Serial.print(
+        "IP Address: "
+    );
 
-    Serial.println(WiFi.localIP());
+    Serial.println(
+        WiFi.localIP()
+    );
 
     // =================================================
-    //                   API ROUTES
+    //                    MQTT SETUP
     // =================================================
 
-    server.on("/api/status", handleStatus);
+    espClient.setInsecure();
 
-    // Light
-    server.on("/api/light/on", handleLightOn);
+    client.setServer(
+        mqtt_server,
+        mqtt_port
+    );
 
-    server.on("/api/light/off", handleLightOff);
-
-    server.on("/api/light/auto", handleLightAuto);
-
-    // Fan
-    server.on("/api/fan/on", handleFanOn);
-
-    server.on("/api/fan/off", handleFanOff);
-
-    server.on("/api/fan/auto", handleFanAuto);
-
-    server.begin();
-
-    Serial.println("API Server Started");
+    client.setCallback(callback);
 }
 
 // =====================================================
@@ -357,39 +363,75 @@ void setup() {
 
 void loop() {
 
-    server.handleClient();
+    // =================================================
+    //                  MQTT CONNECT
+    // =================================================
 
-    int motion = digitalRead(PIR_PIN);
+    if (!client.connected()) {
 
-    int ldrValue = readLDR();
+        reconnect();
+    }
 
-    int gasValue = analogRead(MQ2_PIN);
+    client.loop();
 
-    float temperature = dht.readTemperature();
+    // =================================================
+    //                  SENSOR READ
+    // =================================================
+
+    int motion =
+        digitalRead(PIR_PIN);
+
+    int ldrValue =
+        readLDR();
+
+    int gasValue =
+        analogRead(MQ2_PIN);
+
+    float temperature =
+        dht.readTemperature();
 
     // =================================================
     //                DARK/BRIGHT STABILITY
-    // =====================================================
+    // =================================================
 
-    if (!darkState && ldrValue > DARK_THRESHOLD) {
+    if (
+
+        !darkState &&
+
+        ldrValue > DARK_THRESHOLD
+
+    ) {
 
         darkState = true;
     }
 
-    if (darkState && ldrValue < LIGHT_THRESHOLD) {
+    if (
+
+        darkState &&
+
+        ldrValue < LIGHT_THRESHOLD
+
+    ) {
 
         darkState = false;
     }
 
     // =================================================
     //                  LIGHT AUTO
-    // =====================================================
+    // =================================================
 
     if (!manualLight) {
 
-        if (darkState && motion == HIGH) {
+        if (
 
-            lastLightMotionTime = millis();
+            darkState &&
+
+            motion == HIGH
+
+        ) {
+
+            lastLightMotionTime =
+                millis();
         }
 
         if (!darkState) {
@@ -400,47 +442,130 @@ void loop() {
         else {
 
             lightState =
-                (millis() - lastLightMotionTime <= lightDelay);
+
+                (
+
+                    millis() -
+
+                    lastLightMotionTime
+
+                    <= lightDelay
+                );
         }
     }
 
     // =================================================
-    //                  FAN AUTO
-    // =====================================================
+    //                    FAN AUTO
+    // =================================================
 
-    gasDetected = (gasValue > GAS_THRESHOLD);
+    gasDetected =
+        (gasValue > GAS_THRESHOLD);
 
     if (!manualFan) {
 
-        if (motion == HIGH &&
-            temperature >= TEMP_THRESHOLD) {
+        if (
 
-            lastFanMotionTime = millis();
+            motion == HIGH &&
+
+            temperature >= TEMP_THRESHOLD
+
+        ) {
+
+            lastFanMotionTime =
+                millis();
         }
 
         fanState =
+
             gasDetected ||
+
             (
-                temperature >= TEMP_THRESHOLD &&
-                (millis() - lastFanMotionTime <= fanDelay)
+
+                temperature >=
+                TEMP_THRESHOLD &&
+
+                (
+
+                    millis() -
+
+                    lastFanMotionTime
+
+                    <= fanDelay
+                )
             );
     }
 
     // =================================================
     //                 RELAY CONTROL
-    // =====================================================
+    // =================================================
 
     // Light relay active LOW
+
     digitalWrite(
+
         LIGHT_RELAY_PIN,
+
         lightState ? LOW : HIGH
     );
 
     // Fan relay active HIGH
+
     digitalWrite(
+
         FAN_RELAY_PIN,
+
         fanState ? HIGH : LOW
     );
 
-    delay(100);
+    // =================================================
+    //               MQTT SENSOR JSON
+    // =================================================
+
+    String sensorJson = "{";
+
+    sensorJson += "\"temperature\":";
+    sensorJson += String(temperature);
+    sensorJson += ",";
+
+    sensorJson += "\"ldr\":";
+    sensorJson += String(ldrValue);
+    sensorJson += ",";
+
+    sensorJson += "\"motion\":";
+    sensorJson += String(motion);
+    sensorJson += ",";
+
+    sensorJson += "\"gas\":";
+    sensorJson += String(gasValue);
+    sensorJson += ",";
+
+    sensorJson += "\"light\":\"";
+    sensorJson += lightState ? "ON" : "OFF";
+    sensorJson += "\",";
+
+    sensorJson += "\"fan\":\"";
+    sensorJson += fanState ? "ON" : "OFF";
+    sensorJson += "\",";
+
+    sensorJson += "\"lightAuto\":";
+    sensorJson += manualLight ? "false" : "true";
+    sensorJson += ",";
+
+    sensorJson += "\"fanAuto\":";
+    sensorJson += manualFan ? "false" : "true";
+
+    sensorJson += "}";
+
+    // =================================================
+    //               PUBLISH SENSORS
+    // =================================================
+
+    client.publish(
+
+        "home/sensors",
+
+        sensorJson.c_str()
+    );
+
+    delay(1000);
 }
