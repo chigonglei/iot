@@ -1,70 +1,454 @@
-# Getting Started with Create React App
+# Smart Home IoT Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern Smart Home IoT Dashboard built using:
 
-## Available Scripts
+* React.js frontend
+* ESP32 firmware using PlatformIO
+* MQTT realtime communication
+* HiveMQ Cloud MQTT broker
+* Vercel deployment
 
-In the project directory, you can run:
+This project allows realtime monitoring and control of smart home appliances globally from anywhere using MQTT.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Realtime Sensor Monitoring
 
-### `npm test`
+The dashboard displays live sensor values from the ESP32:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+* Temperature Sensor (DHT11)
+* LDR Light Sensor
+* PIR Motion Sensor
+* MQ2 Gas Sensor
 
-### `npm run build`
+All sensor values update in realtime using MQTT.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Smart Appliance Control
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The dashboard supports:
 
-### `npm run eject`
+### Light Control
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+* ON/OFF manual control
+* Automatic mode using:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+  * LDR sensor
+  * PIR motion sensor
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Fan Control
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+* ON/OFF manual control
+* Automatic mode using:
 
-## Learn More
+  * Temperature sensor
+  * Gas sensor
+  * PIR motion sensor
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Global Access
 
-### Code Splitting
+The frontend is deployed on Vercel and communicates with the ESP32 globally using HiveMQ Cloud MQTT.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Users can:
 
-### Analyzing the Bundle Size
+* Access dashboard from mobile
+* Control appliances remotely
+* Monitor sensors from anywhere
+* Receive realtime updates
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Offline Detection
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+The frontend automatically detects:
 
-### Advanced Configuration
+* ESP32 offline state
+* MQTT disconnection
+* Missing sensor heartbeat
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+When ESP32 is offline:
 
-### Deployment
+* Dashboard shows offline overlay
+* Controls are disabled
+* Connection indicator becomes red
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+# Technologies Used
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Frontend
+
+* React.js
+* MQTT.js
+* React Icons
+* CSS
+
+## Firmware
+
+* ESP32
+* Arduino Framework
+* PlatformIO
+* PubSubClient
+
+## Cloud
+
+* HiveMQ Cloud MQTT Broker
+* Vercel Hosting
+
+---
+
+# System Architecture
+
+```text
+React Frontend (Vercel)
+          │
+          │ MQTT
+          ▼
+HiveMQ Cloud Broker
+          ▲
+          │ MQTT
+          │
+ESP32 Device
+```
+
+---
+
+# Folder Structure
+
+```text
+iot-aws/
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── SensorCard.js
+│   │   │   └── DeviceControl.js
+│   │   │
+│   │   ├── styles/
+│   │   │   ├── App.css
+│   │   │   ├── SensorCard.css
+│   │   │   └── DeviceControl.css
+│   │   │
+│   │   ├── App.js
+│   │   └── index.js
+│   │
+│   └── package.json
+│
+└── esp32/
+    ├── src/
+    │   └── main.cpp
+    │
+    ├── include/
+    ├── lib/
+    ├── platformio.ini
+    └── .pio/
+```
+
+---
+
+# Hardware Components
+
+## ESP32
+
+Main microcontroller handling:
+
+* sensor reading
+* MQTT communication
+* relay control
+* automation logic
+
+---
+
+## Sensors
+
+### DHT11
+
+Used for temperature monitoring.
+
+### LDR Sensor
+
+Used to detect light intensity.
+
+### PIR Motion Sensor
+
+Used for motion detection.
+
+### MQ2 Gas Sensor
+
+Used for gas leakage detection.
+
+---
+
+## Relays
+
+Used to control:
+
+* light
+* fan
+
+---
+
+# MQTT Topics
+
+| Topic        | Purpose       |
+| ------------ | ------------- |
+| home/light   | Light control |
+| home/fan     | Fan control   |
+| home/sensors | Sensor data   |
+
+---
+
+# Installation Guide
+
+# Frontend Setup
+
+## Clone Repository
+
+```bash
+git clone YOUR_REPOSITORY_URL
+```
+
+---
+
+## Open Frontend
+
+```bash
+cd frontend
+```
+
+---
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Install MQTT
+
+```bash
+npm install mqtt
+```
+
+---
+
+## Start Frontend
+
+```bash
+npm start
+```
+
+---
+
+# ESP32 Setup
+
+## Open Project
+
+Open ESP32 folder using VS Code + PlatformIO.
+
+---
+
+## Install Libraries
+
+Inside `platformio.ini`
+
+```ini
+lib_deps =
+    adafruit/DHT sensor library
+    knolleary/PubSubClient
+```
+
+---
+
+## Configure WiFi
+
+Inside `main.cpp`
+
+```cpp
+const char* ssid = "YOUR_WIFI";
+const char* password = "YOUR_PASSWORD";
+```
+
+---
+
+## Configure MQTT
+
+```cpp
+const char* mqtt_server =
+"YOUR_HIVEMQ_CLUSTER";
+
+const char* mqtt_user =
+"YOUR_USERNAME";
+
+const char* mqtt_password =
+"YOUR_PASSWORD";
+```
+
+---
+
+## Upload Firmware
+
+```bash
+pio run --target upload
+```
+
+---
+
+## Open Serial Monitor
+
+```bash
+pio device monitor
+```
+
+---
+
+# HiveMQ Cloud Setup
+
+## Create Account
+
+Create free account at:
+
+[https://www.hivemq.com/mqtt-cloud-broker/](https://www.hivemq.com/mqtt-cloud-broker/)
+
+---
+
+## Create Cluster
+
+Choose:
+
+* Serverless Free Cluster
+
+---
+
+## Create Credentials
+
+Inside:
+
+* Access Management
+* Credentials
+
+Create:
+
+* username
+* password
+
+---
+
+## Copy Cluster URL
+
+Example:
+
+```text
+abc123.s1.eu.hivemq.cloud
+```
+
+---
+
+# Vercel Deployment
+
+## Push Code To GitHub
+
+```bash
+git add .
+
+git commit -m "deploy"
+
+git push
+```
+
+---
+
+## Deploy On Vercel
+
+1. Open Vercel
+2. Import GitHub repository
+3. Deploy
+
+Frontend becomes publicly accessible.
+
+---
+
+# Automation Logic
+
+## Light Automation
+
+Light turns ON when:
+
+* room is dark
+* motion is detected
+
+Light turns OFF automatically after delay.
+
+---
+
+## Fan Automation
+
+Fan turns ON when:
+
+* temperature exceeds threshold
+* gas level exceeds threshold
+* motion detected with high temperature
+
+Fan turns OFF automatically after delay.
+
+---
+
+# Connection Heartbeat Logic
+
+Frontend monitors ESP32 heartbeat using MQTT sensor messages.
+
+If no sensor message is received within 5 seconds:
+
+* ESP32 marked offline
+* Offline popup shown
+* Controls disabled
+
+---
+
+# Future Improvements
+
+Potential upgrades:
+
+* Dark mode
+* Historical charts
+* Firebase notifications
+* User authentication
+* Camera integration
+* Voice assistant support
+* AI automation
+* Mobile app
+* Power monitoring
+* Multi-room support
+* Home scheduling
+
+---
+
+# Screenshots
+
+Add screenshots here:
+
+* Dashboard UI
+* Offline overlay
+* Sensor cards
+* Appliance control
+* MQTT monitor
+
+---
+
+# Author
+
+Developed by Sanjoy Khoirom.
+
+---
+
+# License
+
+This project is for educational and learning purposes.
